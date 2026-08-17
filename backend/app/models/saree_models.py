@@ -2,9 +2,8 @@
 
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, Numeric, Float, 
-    DateTime, Date, ForeignKey, Index, UniqueConstraint
+    DateTime, Date, ForeignKey, Index, UniqueConstraint, ARRAY as SA_ARRAY, JSON as SA_JSON
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
 
@@ -238,8 +237,9 @@ class Coupon(Base):
     usage_limit = Column(Integer)
     usage_count = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
-    applicable_categories = Column(ARRAY(String))
-    applicable_products = Column(ARRAY(Integer))
+    # Use String for SQLite compatibility, will be ARRAY in PostgreSQL
+    applicable_categories = Column(String)  # Comma-separated values for SQLite
+    applicable_products = Column(String)  # Comma-separated values for SQLite
     
     def is_valid(self):
         """Check if coupon is currently valid"""
@@ -358,7 +358,7 @@ class Payment(Base):
     provider = Column(String)
     provider_transaction_id = Column(String)
     reference_id = Column(String)
-    payment_metadata = Column(JSONB)  # Renamed from metadata to avoid conflict
+    payment_metadata = Column(SA_JSON)  # Renamed from metadata to avoid conflict
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
     sale = relationship("Sale", back_populates="payments")
@@ -379,7 +379,7 @@ class Return(Base):
     
     sale = relationship("Sale", back_populates="returns")
     customer = relationship("Customer", back_populates="returns")
-    items = relationship("ReturnItem", back_populates="return", cascade="all, delete-orphan")
+    items = relationship("ReturnItem", back_populates="return_rel", cascade="all, delete-orphan")
 
 
 class ReturnItem(Base):
@@ -393,7 +393,7 @@ class ReturnItem(Base):
     condition = Column(String, nullable=False)  # RESELLABLE, DAMAGED
     refund_amount = Column(Numeric(12, 2), nullable=False)
     
-    return_obj = relationship("Return", back_populates="items", foreign_keys=[return_id])
+    return_rel = relationship("Return", back_populates="items", foreign_keys=[return_id])
     sale_item = relationship("SaleItem", back_populates="return_items")
     saree = relationship("Saree", back_populates="return_items")
 
@@ -431,8 +431,8 @@ class AuditLog(Base):
     action = Column(String, nullable=False)
     entity_type = Column(String, nullable=False)
     entity_id = Column(Integer)
-    old_values = Column(JSONB)
-    new_values = Column(JSONB)
+    old_values = Column(SA_JSON)
+    new_values = Column(SA_JSON)
     ip_address = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
