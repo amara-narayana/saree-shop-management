@@ -23,11 +23,8 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @pytest.fixture(scope="function")
 def db_session():
     """Create a fresh database session for each test"""
-    # Only create tables needed for specific tests
-    Base.metadata.create_all(bind=engine, tables=[
-        Saree.__table__,
-        Inventory.__table__
-    ])
+    # Create all tables to avoid missing table errors
+    Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     try:
         yield db
