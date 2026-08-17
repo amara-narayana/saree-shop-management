@@ -32,6 +32,11 @@ MANIFEST
 .env.local
 .env.*
 
+# Python cache (if any Python files exist in frontend)
+__pycache__/
+*.pyc
+*.pyo
+
 # Logs
 *.log
 
